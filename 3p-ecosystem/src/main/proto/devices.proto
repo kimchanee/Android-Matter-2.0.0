@@ -40,6 +40,7 @@ message Device {
         TYPE_COLOR_TEMPERATURE_LIGHT = 5;
         TYPE_EXTENDED_COLOR_LIGHT = 6;
         TYPE_LIGHT_SWITCH = 7;
+        TYPE_WINDOW_COVERING = 8;
     }
     DeviceType deviceType = 4;
 

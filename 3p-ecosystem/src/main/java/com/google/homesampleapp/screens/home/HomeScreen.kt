@@ -187,6 +187,13 @@ internal fun HomeRoute(
     }
   }
 
+  // Open/Close/Stop Button click.
+  val onOpenCloseStopClick: (deviceId: Long, value: Int) -> Unit = remember {
+    { deviceId, value ->
+      homeViewModel.updateDeviceStateOpenCloseStop(deviceId, value)
+    }
+  }
+
   // The device commissioning flow involves multiple steps as it is based on an Activity
   // that is launched on the Google Play Services (GPS).
   // Step 1 (here) is where An activity launcher is registered.
@@ -256,7 +263,7 @@ internal fun HomeRoute(
     // attestation failures, which happen if commissioning production devices.
     // TODO: Look into supporting different Root CAs.
     // FIXME: This currently breaks commissioning. Removed for now.
-    // homeViewModel.setDeviceAttestationDelegate()
+    homeViewModel.setDeviceAttestationDelegate()
     onPauseOrDispose {
       // do any needed clean up here
       Timber.d("LifecycleResumeEffect:onPauseOrDispose stopMonitoringStateChanges()")
@@ -280,6 +287,7 @@ internal fun HomeRoute(
     onCommissionDevice,
     onDeviceClick,
     onOnOffClick,
+    onOpenCloseStopClick,
   )
 }
 
@@ -297,9 +305,10 @@ private fun HomeScreen(
   onCommissionDevice: () -> Unit,
   onDeviceClick: (deviceUiModel: DeviceUiModel) -> Unit,
   onOnOffClick: (deviceId: Long, value: Boolean) -> Unit,
+  onOpenCloseStopClick: (deviceId: Long, value: Int) -> Unit,
 ) {
   // Alert Dialog taling about the Codelab when the app is first launched.
-  CodelabAlertDialog(showCodelabUserPrefs, onCodelabCheckboxChange)
+  //CodelabAlertDialog(showCodelabUserPrefs, onCodelabCheckboxChange)
 
   // Alert Dialog for messages to be shown to the user.
   MsgAlertDialog(msgDialogInfo, onConsumeMsgDialog)
@@ -325,15 +334,25 @@ private fun HomeScreen(
         ) {
           this.items(devicesList) { device ->
             val onDeviceItemClick: () -> Unit = { onDeviceClick(device) }
-            DeviceItem(
-              device.device.deviceId,
-              device.device.deviceType,
-              device.device.name,
-              device.isOnline,
-              device.isOn,
-              onOnOffClick,
-              onDeviceItemClick,
+            if(device.device.deviceType == Device.DeviceType.TYPE_WINDOW_COVERING)
+              DeviceItemWindow(
+                device.device.deviceId,
+                device.device.deviceType,
+                device.device.name,
+                device.isOnline,
+                onOpenCloseStopClick,
+                onDeviceItemClick,
             )
+            else
+              DeviceItem(
+                device.device.deviceId,
+                device.device.deviceType,
+                device.device.name,
+                device.isOnline,
+                device.isOn,
+                onOnOffClick,
+                onDeviceItemClick,
+              )
           }
         }
       }
@@ -395,6 +414,87 @@ private fun DeviceItem(
       }
       Spacer(Modifier.weight(1f))
       Switch(checked = isOn, onCheckedChange = onCheckedChange)
+    }
+  }
+}
+
+
+@Composable
+private fun DeviceItemWindow(
+  deviceId: Long,
+  deviceType: Device.DeviceType,
+  name: String,
+  isOnline: Boolean,
+  onOpenCloseStopClick: (deviceId: Long, value: Int) -> Unit,
+  onDeviceClick: (() -> Unit),
+) {
+  val bgColor =
+    if (isOnline) MaterialTheme.colorScheme.surfaceVariant
+    else MaterialTheme.colorScheme.surface
+  val contentColor =
+    if (isOnline) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.onSurface
+  val iconId = getDeviceTypeIconId(deviceType)
+
+  Surface(
+    modifier = Modifier
+      .padding(top = 12.dp)
+      .padding(PaddingValues(horizontal = 12.dp)),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
+    contentColor = contentColor,
+    color = bgColor,
+    shape = RoundedCornerShape(dimensionResource(R.dimen.rounded_corner)),
+    onClick = onDeviceClick,
+  ) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+      modifier = Modifier.padding(dimensionResource(R.dimen.padding_surface_content)),
+    ) {
+      Icon(
+        painter = painterResource(id = iconId),
+        contentDescription = null, // decorative element
+      )
+      if(isOnline) {
+        Column {
+          Text(text = name, style = MaterialTheme.typography.bodyLarge)
+        }
+        Button(
+          onClick = {
+            onOpenCloseStopClick(deviceId, 0)
+          },
+          enabled = true,
+          contentPadding = PaddingValues(start = 1.dp, top = 1.dp, end = 1.dp, bottom = 1.dp),
+        ) {
+          Text(text = "<||>", style = MaterialTheme.typography.bodySmall)  // Open
+        }
+        //Spacer(Modifier.weight(1f))
+        Button(
+          onClick = {
+            onOpenCloseStopClick(deviceId, 2)
+          },
+          enabled = true,
+          contentPadding = PaddingValues(start = 1.dp, top = 1.dp, end = 1.dp, bottom = 1.dp),
+        ) {
+          Text(text = "||", style = MaterialTheme.typography.bodySmall)  // Stop
+        }
+        //Spacer(Modifier.weight(1f))
+        Button(
+          onClick = {
+            onOpenCloseStopClick(deviceId, 1)
+          },
+          enabled = true,
+          contentPadding = PaddingValues(start = 1.dp, top = 1.dp, end = 1.dp, bottom = 1.dp),
+        ) {
+          Text(text = ">||<", style = MaterialTheme.typography.bodySmall)  // Close
+        }
+      }
+      else {
+        Column {
+          Text(text = name, style = MaterialTheme.typography.bodyLarge)
+          Text(text = "OFFLINE", style = MaterialTheme.typography.bodyLarge)
+        }
+      }
     }
   }
 }
@@ -670,6 +770,7 @@ fun multiAdminCommissionDevice(
 @Composable
 private fun HomeScreenNoDevicesPreview() {
   val bogus: (a: Long, b: Boolean) -> Unit = { _, _ -> }
+  val bogus2: (a: Long, b: Int) -> Unit = { _, _ -> }
   MaterialTheme {
     HomeScreen(
       PaddingValues(8.dp),
@@ -684,6 +785,7 @@ private fun HomeScreenNoDevicesPreview() {
       {},
       {},
       bogus,
+      bogus2,
     )
   }
 }
@@ -692,11 +794,13 @@ private fun HomeScreenNoDevicesPreview() {
 @Composable
 private fun HomeScreenWithDevicesPreview() {
   val bogus: (a: Long, b: Boolean) -> Unit = { _, _ -> }
+  val bogus2: (a: Long, b: Int) -> Unit = { _, _ -> }
   val devicesList =
     listOf(
       DeviceUiModel(createDevice(), true, true),
       DeviceUiModel(createDevice(name = "Smart Outlet"), true, false),
       DeviceUiModel(createDevice(name = "My living room lamp"), false, true),
+      DeviceUiModel(createDeviceWindow(name = "Living room Curtain"), true, true),
     )
   MaterialTheme {
     HomeScreen(
@@ -712,6 +816,7 @@ private fun HomeScreenWithDevicesPreview() {
       {},
       {},
       bogus,
+      bogus2,
     )
   }
 }
@@ -743,6 +848,26 @@ private fun NewDeviceAlertDialogAttestationFailureIgnoredPreview() {
 private fun createDevice(
   deviceId: Long = 1L,
   deviceType: Device.DeviceType = Device.DeviceType.TYPE_OUTLET,
+  dateCommissioned: Timestamp = Timestamp.getDefaultInstance(),
+  name: String = "My Matter Device",
+  productId: String = "8785",
+  vendorId: String = "6006",
+  room: String = "Living Room",
+): Device {
+  return Device.newBuilder()
+    .setDeviceId(deviceId)
+    .setDeviceType(deviceType)
+    .setDateCommissioned(dateCommissioned)
+    .setName(name)
+    .setProductId(productId)
+    .setVendorId(vendorId)
+    .setRoom(room)
+    .build()
+}
+
+private fun createDeviceWindow(
+  deviceId: Long = 1L,
+  deviceType: Device.DeviceType = Device.DeviceType.TYPE_WINDOW_COVERING,
   dateCommissioned: Timestamp = Timestamp.getDefaultInstance(),
   name: String = "My Matter Device",
   productId: String = "8785",

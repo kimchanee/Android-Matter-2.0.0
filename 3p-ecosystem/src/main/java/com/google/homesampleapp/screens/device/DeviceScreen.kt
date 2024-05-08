@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -161,6 +162,13 @@ internal fun DeviceRoute(
     }
   }
 
+  // Open/Close/Stop Button click.
+  val onOpenCloseStopClick: (value: Int) -> Unit = remember {
+    { value ->
+      deviceViewModel.updateDeviceStateOpenCloseStop(deviceUiModel!!, value)
+    }
+  }
+
   // Inspect button click handler.
   // isOnline must be provided in InspectScreen because it is updated there.
   val onInspect: (isOnline: Boolean) -> Unit = remember {
@@ -238,6 +246,7 @@ internal fun DeviceRoute(
     deviceUiModel,
     lastUpdatedDeviceState,
     onOnOffClick,
+    onOpenCloseStopClick,
     onRemoveDeviceClick,
     onShareDevice,
     onInspect,
@@ -256,6 +265,7 @@ private fun DeviceScreen(
   deviceUiModel: DeviceUiModel?,
   deviceState: DeviceState?,
   onOnOffClick: (value: Boolean) -> Unit,
+  onOpenCloseStopClick: (value: Int) -> Unit,
   onRemoveDeviceClick: () -> Unit,
   onShareDevice: () -> Unit,
   onInspect: (isOnline: Boolean) -> Unit,
@@ -314,7 +324,11 @@ private fun DeviceScreen(
 
   deviceUiModel.let { model ->
     Column(modifier = Modifier.fillMaxWidth().padding(innerPadding)) {
-      OnOffStateSection(isOnline, isOn) { onOnOffClick(it) }
+      if(model.device.deviceType == Device.DeviceType.TYPE_WINDOW_COVERING)
+        OpenCloseStateSection(isOnline) { onOpenCloseStopClick(it) }
+      else
+        OnOffStateSection(isOnline, isOn) { onOnOffClick(it) }
+
       ShareSection(name = model.device.name, onShareDevice)
       // TODO: Use HorizontalDivider when it becomes part of the stable Compose BOM.
       Spacer(modifier = Modifier)
@@ -351,6 +365,65 @@ private fun OnOffStateSection(
       Text(text = text, style = MaterialTheme.typography.bodyLarge)
       Spacer(Modifier.weight(1f))
       Switch(checked = isOn, onCheckedChange = onStateChange)
+    }
+  }
+}
+
+
+@Composable
+private fun OpenCloseStateSection(
+  isOnline: Boolean,
+  onOpenCloseStopClick: (value: Int) -> Unit,
+) {
+  val bgColor =
+    if (isOnline) MaterialTheme.colorScheme.surfaceVariant
+    else MaterialTheme.colorScheme.surface
+  val contentColor =
+    if (isOnline) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.onSurface
+
+  Surface(
+    modifier = Modifier.padding(dimensionResource(R.dimen.margin_normal)),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
+    contentColor = contentColor,
+    color = bgColor,
+    shape = RoundedCornerShape(dimensionResource(R.dimen.rounded_corner)),
+  ) {
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.padding(dimensionResource(R.dimen.padding_surface_content)),
+    ) {
+      if(isOnline) {
+        Button(
+          onClick = {
+            onOpenCloseStopClick(0)
+          },
+          enabled = true,
+        ) {
+          Text(text = "Open", style = MaterialTheme.typography.bodyMedium)
+        }
+        Spacer(Modifier.weight(1f))
+        Button(
+          onClick = {
+            onOpenCloseStopClick(2)
+          },
+          enabled = true,
+        ) {
+          Text(text = "Stop", style = MaterialTheme.typography.bodyMedium)
+        }
+        Spacer(Modifier.weight(1f))
+        Button(
+          onClick = {
+            onOpenCloseStopClick(1)
+          },
+          enabled = true,
+        ) {
+          Text(text = "Close", style = MaterialTheme.typography.bodyMedium)
+        }
+      }
+      else {
+        Text(text = "OFFLINE", style = MaterialTheme.typography.bodyLarge)
+      }
     }
   }
 }
@@ -561,6 +634,24 @@ private fun OnOffStateSection_Offline() {
   MaterialTheme { OnOffStateSection(false, true, { Timber.d("OnOff state changed to $it") }) }
 }
 
+
+
+
+@Preview(widthDp = 300)
+@Composable
+private fun OpenCloseStateSection_OnlineOn() {
+  MaterialTheme { OpenCloseStateSection(isOnline = true)
+  { Timber.d("OpenClose state changed to $it") }
+  }
+}
+
+@Preview(widthDp = 300)
+@Composable
+private fun OpenCloseStateSection_Offline() {
+  MaterialTheme { OpenCloseStateSection(false, { Timber.d("OpenClose state changed to $it") }) }
+}
+
+
 @Preview(widthDp = 300)
 @Composable
 private fun ShareSectionPreview() {
@@ -589,12 +680,17 @@ private fun DeviceScreenOnlineOnPreview() {
     { value ->
       Timber.d("deviceUiModel [$deviceUiModel] value [$value]")
     }
+  val onOpenCloseStopClick: (value: Int) -> Unit =
+    { value ->
+      Timber.d("deviceUiModel [$deviceUiModel] value [$value]")
+    }
   MaterialTheme {
     DeviceScreen(
       PaddingValues(),
       deviceUiModel,
       deviceState,
       onOnOffClick,
+      onOpenCloseStopClick,
       {},
       {},
       {},

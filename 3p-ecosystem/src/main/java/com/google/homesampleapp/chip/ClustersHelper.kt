@@ -564,7 +564,103 @@ class ClustersHelper @Inject constructor(private val chipClient: ChipClient) {
     return ChipClusters.OnOffCluster(devicePtr, endpoint)
   }
 
+
   // -----------------------------------------------------------------------------------------------
+  // WindowCoveringCluster functions
+
+  suspend fun setWindowCoveringClusterDeviceStateClose(deviceId: Long, endpoint: Int) {
+    Timber.d(
+          "setWindowCoveringClusterDeviceStateClose() [${deviceId}] endpoint [${endpoint}]")
+    val connectedDevicePtr =
+        try {
+            chipClient.getConnectedDevicePointer(deviceId)
+        } catch (e: IllegalStateException) {
+            Timber.e("Can't get connectedDevicePointer.")
+            return
+        }
+
+        return suspendCoroutine { continuation ->
+            getWindowCoveringClusterForDevice(connectedDevicePtr, endpoint)
+                .downOrClose(
+                    object : ChipClusters.DefaultClusterCallback {
+                        override fun onSuccess() {
+                          Timber.d("Success for setWindowCoveringClusterDeviceStateClose")
+                          continuation.resume(Unit)
+                        }
+
+                        override fun onError(ex: Exception) {
+                          Timber.e(ex, "Failure for setWindowCoveringClusterDeviceStateClose")
+                          continuation.resumeWithException(ex)
+                        }
+                })
+            }
+
+    }
+
+  suspend fun setWindowCoveringClusterDeviceStateOpen(deviceId: Long, endpoint: Int) {
+    Timber.d(
+        "setWindowCoveringClusterDeviceStateOpen() [${deviceId}] endpoint [${endpoint}]")
+    val connectedDevicePtr =
+        try {
+            chipClient.getConnectedDevicePointer(deviceId)
+        } catch (e: IllegalStateException) {
+            Timber.e("Can't get connectedDevicePointer.")
+            return
+        }
+
+    return suspendCoroutine { continuation ->
+        getWindowCoveringClusterForDevice(connectedDevicePtr, endpoint)
+            .upOrOpen(
+                object : ChipClusters.DefaultClusterCallback {
+                    override fun onSuccess() {
+                      Timber.d("Success for setWindowCoveringClusterDeviceStateOpen")
+                      continuation.resume(Unit)
+                    }
+
+                    override fun onError(ex: Exception) {
+                      Timber.e(ex, "Failure for setWindowCoveringClusterDeviceStateOpen")
+                      continuation.resumeWithException(ex)
+                    }
+                })
+        }
+  }
+
+
+  suspend fun setWindowCoveringClusterDeviceStateStop(deviceId: Long, endpoint: Int) {
+    Timber.d(
+      "setWindowCoveringClusterDeviceStateStop() [${deviceId}] endpoint [${endpoint}]")
+    val connectedDevicePtr =
+      try {
+        chipClient.getConnectedDevicePointer(deviceId)
+      } catch (e: IllegalStateException) {
+        Timber.e("Can't get connectedDevicePointer.")
+        return
+      }
+
+    return suspendCoroutine { continuation ->
+        getWindowCoveringClusterForDevice(connectedDevicePtr, endpoint)
+            .stopMotion(
+                object : ChipClusters.DefaultClusterCallback {
+                    override fun onSuccess() {
+                      Timber.d("Success for setWindowCoveringClusterDeviceStateStop")
+                      continuation.resume(Unit)
+                    }
+
+                    override fun onError(ex: Exception) {
+                      Timber.e(ex, "Failure for setWindowCoveringClusterDeviceStateStop")
+                      continuation.resumeWithException(ex)
+                    }
+                })
+      }
+  }
+
+
+  private fun getWindowCoveringClusterForDevice(devicePtr: Long, endpoint: Int): ChipClusters.WindowCoveringCluster {
+    return ChipClusters.WindowCoveringCluster(devicePtr, endpoint)
+  }
+
+
+    // -----------------------------------------------------------------------------------------------
   // Administrator Commissioning Cluster (11.19)
 
   suspend fun openCommissioningWindowAdministratorCommissioningCluster(

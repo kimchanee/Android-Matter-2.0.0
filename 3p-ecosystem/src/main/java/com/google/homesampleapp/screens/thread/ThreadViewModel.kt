@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.threadnetwork.ThreadNetworkCredentials
 import com.google.common.io.BaseEncoding
+import com.google.homesampleapp.ToastTimber
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.journeyapps.barcodescanner.BarcodeEncoder
@@ -59,7 +60,7 @@ class ThreadViewModel @Inject constructor() : ViewModel() {
     get() = _threadClientIntentSender
 
   // OpenThread BorderRouter constants.
-  private val otbrPort = "8081"
+  private val otbrPort = "80"   //  philip modify 8081 -> 80
   private val otbrDatasetPendingEndpoint = "/node/dataset/pending"
   private val otbrDatasetActiveEndpoint = "/node/dataset/active"
   private val threadCredentialsQRCodePrefix = "TD:"
@@ -168,12 +169,18 @@ class ThreadViewModel @Inject constructor() : ViewModel() {
             // FIXME: save otbr id...
             val selectedThreadBorderRouterId = actionRequest.serviceInfo.attributes["id"]
             setThreadCredentialsInfo(selectedThreadBorderRouterId, threadNetworkCredentials)
+            setActionDialogInfoWithMessage(ActionType.None, "Success!")
           }
         } catch (e: Exception) {
           setActionDialogInfoWithError(actionRequest.type, e.toString())
         }
       }
     }
+  }
+
+  // Dataset to ByteArray
+  fun String.dsToByteArray(): ByteArray {   //  philip add, refer to https://developers.home.google.com/thread?hl=en#resources
+    return chunked(2).map { it.toInt(16).toByte() }.toByteArray()
   }
 
   /**
@@ -189,7 +196,7 @@ class ThreadViewModel @Inject constructor() : ViewModel() {
       )
     return if (response.first.responseCode in OtbrHttpClient.okResponses) {
       ThreadNetworkCredentials.fromActiveOperationalDataset(
-        BaseEncoding.base16().decode(response.second)
+        response.second.dsToByteArray()    //  philip,BaseEncoding.base16().decode(response.second) -> response.second.dsToByteArray()
       )
     } else {
       null

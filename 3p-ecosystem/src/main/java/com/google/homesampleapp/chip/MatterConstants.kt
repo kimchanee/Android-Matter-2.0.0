@@ -21,7 +21,12 @@ object MatterConstants {
       mapOf<Long, String>(
           22L to "Root Node",
           256L to "On/Off Light",
+          257L to "Dimmable Light",
+          259L to "On/Off Light Switch",
           266L to "Outlet",
+          268L to "Color Temperature Light",
+          269L to "Extended Color Light",
+          514L to "Window Covering",
       )
 
   val ClustersMap =

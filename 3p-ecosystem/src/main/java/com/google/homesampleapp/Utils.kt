@@ -87,12 +87,17 @@ fun lifeCycleEvent(event: String): String {
 /** Set the strings for DeviceType. */
 lateinit var DeviceTypeStrings: MutableMap<DeviceType, String>
 
-fun setDeviceTypeStrings(unspecified: String, light: String, outlet: String, unknown: String) {
+fun setDeviceTypeStrings(unspecified: String, light: String, outlet: String, dimmable_light: String, color_temperature_light: String, extended_color_light: String, light_switch: String, windows_covering: String, unknown: String) {
   DeviceTypeStrings =
     mutableMapOf(
       DeviceType.TYPE_UNSPECIFIED to unspecified,
       DeviceType.TYPE_LIGHT to light,
       DeviceType.TYPE_OUTLET to outlet,
+      DeviceType.TYPE_DIMMABLE_LIGHT to dimmable_light,
+      DeviceType.TYPE_COLOR_TEMPERATURE_LIGHT to color_temperature_light,
+      DeviceType.TYPE_EXTENDED_COLOR_LIGHT to extended_color_light,
+      DeviceType.TYPE_LIGHT_SWITCH to light_switch,
+      DeviceType.TYPE_WINDOW_COVERING to windows_covering,
       DeviceType.TYPE_UNKNOWN to unknown,
     )
 }
@@ -116,6 +121,7 @@ fun getDeviceTypeIconId(deviceType: DeviceType) : Int {
     DeviceType.TYPE_COLOR_TEMPERATURE_LIGHT -> R.drawable.quantum_gm_ic_lights_gha_vd_theme_24
     DeviceType.TYPE_EXTENDED_COLOR_LIGHT -> R.drawable.quantum_gm_ic_lights_gha_vd_theme_24
     DeviceType.TYPE_LIGHT_SWITCH -> R.drawable.quantum_gm_ic_lights_gha_vd_theme_24
+    DeviceType.TYPE_WINDOW_COVERING -> R.drawable.ic_baseline_developer_mode_24
     DeviceType.UNRECOGNIZED -> R.drawable.ic_baseline_device_unknown_24
   }
 }
@@ -130,6 +136,7 @@ fun getDeviceTypeDisplayStringId(deviceType: DeviceType) : Int {
     DeviceType.TYPE_COLOR_TEMPERATURE_LIGHT -> R.string.device_type_color_temperature_light
     DeviceType.TYPE_EXTENDED_COLOR_LIGHT -> R.string.device_type_extended_color_light
     DeviceType.TYPE_LIGHT_SWITCH -> R.string.device_type_light_switch
+    DeviceType.TYPE_WINDOW_COVERING -> R.string.device_type_window_covering
     DeviceType.UNRECOGNIZED -> R.string.device_type_unrecognized
   }
 }
@@ -145,6 +152,7 @@ fun convertToAppDeviceType(matterDeviceType: Long): DeviceType {
     266L -> DeviceType.TYPE_OUTLET // 0x010A (On/Off Plug-in Unit)
     268L -> DeviceType.TYPE_COLOR_TEMPERATURE_LIGHT // 0x010C Color Temperature Light
     269L -> DeviceType.TYPE_EXTENDED_COLOR_LIGHT // 0x010D Extended Color Light
+    514L -> DeviceType.TYPE_WINDOW_COVERING // 0x0202 Window Covering
     else -> DeviceType.TYPE_UNKNOWN
   }
 }

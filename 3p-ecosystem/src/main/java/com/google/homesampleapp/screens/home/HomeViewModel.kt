@@ -407,6 +407,23 @@ constructor(
     }
   }
 
+  fun updateDeviceStateOpenCloseStop(deviceId: Long, setState: Int) {
+    Timber.d("updateDeviceStateOpenCloseStop: Device [${deviceId}]  setState [${setState}]")
+    viewModelScope.launch {
+      Timber.d("Handling real device")
+      try {
+        if(setState == 0)
+          clustersHelper.setWindowCoveringClusterDeviceStateOpen(deviceId, 1)
+        else if(setState == 1)
+          clustersHelper.setWindowCoveringClusterDeviceStateClose(deviceId, 1)
+        else
+          clustersHelper.setWindowCoveringClusterDeviceStateStop(deviceId, 1)
+      } catch (e: Throwable) {
+        Timber.e("Failed setting Open/Close/Stop state")
+      }
+    }
+  }
+
   // -----------------------------------------------------------------------------------------------
   // State Changes Monitoring
 
